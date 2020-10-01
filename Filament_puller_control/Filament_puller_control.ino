@@ -12,7 +12,7 @@
   const int dat = 2; //Mitutoyo Data line goes to pin 2
   const int clk = 3; //Mitutoyo Clock line goes to pin 3
 
-//L298N mini H-bridge motor controller
+//Transistor-switch motor controller
   const int int1 = 6; //L298N mini H-bridge motor controller input 1 goes to pin 6 -- these need to be PWN pins. On the Nano Every that's D3, D5, D6, D9, D10
   int pwmOutput = 80; //variable determining motor speed, starts at 50
 
