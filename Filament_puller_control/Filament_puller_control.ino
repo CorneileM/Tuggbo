@@ -14,7 +14,7 @@
 
 //L298N mini H-bridge motor controller
   const int int1 = 6; //L298N mini H-bridge motor controller input 1 goes to pin 6 -- these need to be PWN pins. On the Nano Every that's D3, D5, D6, D9, D10
-  int pwmOutput = 50; //variable determining motor speed, starts at 50
+  int pwmOutput = 80; //variable determining motor speed, starts at 50
 
 //Mitutoyo data variables
   int i = 0;
@@ -118,12 +118,12 @@ void loop() {
         if(pwmOutput > 254){
           pwmOutput = 254;
           } 
-        else if(pwmOutput < 50){
-          pwmOutput = 50;
+        else if(pwmOutput < 80){
+          pwmOutput = 80;
           }
           
       } else {
-         pwmOutput = 50;
+         pwmOutput = 80;
         } 
 
       Serial.print("PWM ");
