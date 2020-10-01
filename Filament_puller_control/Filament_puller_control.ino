@@ -14,7 +14,7 @@
 
 //L298N mini H-bridge motor controller
   const int int1 = 6; //L298N mini H-bridge motor controller input 1 goes to pin 6 -- these need to be PWN pins. On the Nano Every that's D3, D5, D6, D9, D10
-  int pwmOutput = 25; //variable determining motor speed, starts at 50
+  int pwmOutput = 50; //variable determining motor speed, starts at 50
 
 //Mitutoyo data variables
   int i = 0;
@@ -109,7 +109,7 @@ void loop() {
       //L298N mini H-bridge motor controller
       //the motor speed is only adjusted once all readings have been taken and averaged
       
-      MITreadAveDiff = FilamentDiam - MITreadAve; //Difference between MITreadAve and the goal FilamentDiam
+      MITreadAveDiff = FilamentDiam - MITreadAve + 7; //Difference between MITreadAve and the goal FilamentDiam. We add 7 to compensate for the dip in the U-groove bearing that the plunge tip can't get into.
     
       if(MITreadAve > 10 && MITreadAve < 600){
 
@@ -118,12 +118,12 @@ void loop() {
         if(pwmOutput > 254){
           pwmOutput = 254;
           } 
-        else if(pwmOutput < 25){
-          pwmOutput = 25;
+        else if(pwmOutput < 50){
+          pwmOutput = 50;
           }
           
       } else {
-         pwmOutput = 25;
+         pwmOutput = 50;
         } 
 
       Serial.print("PWM ");
