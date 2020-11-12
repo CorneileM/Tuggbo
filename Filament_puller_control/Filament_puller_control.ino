@@ -2,8 +2,7 @@
 //The diameter of the filament is controlled by the speed of a DC motor which pulls filament from an extruder (Filabot EX2): faster = thinner filament; slower = thicker filament.
 //The speed of the DC motor is adjusted based on the measured filament diameter which is read from a Mitutoyo digital plunge-dial indicator, to obtain a stable filament diameter.
 
-//This sketch combines and significantly modifies original sketches by SSpence: https://www.instructables.com/id/Interfacing-a-Digital-Micrometer-to-a-Microcontrol/ & Dejan Nedelkovski: https://howtomechatronics.com/tutorials/arduino/arduino-dc-motor-control-tutorial-l298n-pwm-h-bridge/
-
+//This sketch incoporates code from SSpence for reading data from the Mitutoyo plangue dial: https://www.instructables.com/id/Interfacing-a-Digital-Micrometer-to-a-Microcontrol/ 
 
 //***PIN AND VARIABLE DECLARATIONS***
 
@@ -23,7 +22,7 @@
   int MITread;
   int MITreadAve;
   int MITreadAveDiff;
-  const int FilamentDiam = 145; //Sets the filament diameter goal we want. Units are mm/100
+  const int FilamentDiam = 145; //Sets the filament diameter goal we want. Units are mm/100. Technically, we want 1.75m, but there's a slight groove in our Mitutoyo's pulley, which leads to a 0.3mm offset.
   byte mydata[14];
   String value_str;
   long value_int;
@@ -45,8 +44,8 @@ void setup() {
   pinMode(dat, INPUT_PULLUP); //To obtain data we will read from the clk and dat pins, so they need to be set to INPUT with internal PULLUP resistors to stop noisy readings
   digitalWrite(req, HIGH); // set initial state of req (5) pin to HIGH so that data can be requested from Mitutoyo by setting the pin LOW
 
- //L298N mini H-bridge motor controller
-  //motor controller pins are set to outputs so that we can send PWM signals to control the motor
+ //MOSFET motor controller
+  //MOSFET pin is set to output so that we can send PWM signals to control the motor
   pinMode(int1, OUTPUT); 
   
   //Starts the motor in forward direction at the motor starting speed
@@ -106,10 +105,10 @@ void loop() {
       MITreadTotal = 0;
 
       
-      //L298N mini H-bridge motor controller
+      //MOSFET motor controller
       //the motor speed is only adjusted once all readings have been taken and averaged
       
-      MITreadAveDiff = FilamentDiam - MITreadAve; //Difference between MITreadAve and the goal FilamentDiam. We add 7 to compensate for the dip in the U-groove bearing that the plunge tip can't get into.
+      MITreadAveDiff = FilamentDiam - MITreadAve; //Difference between MITreadAve and the goal FilamentDiam.
     
       if(MITreadAve > 10 && MITreadAve < 600){
 
@@ -131,7 +130,7 @@ void loop() {
       
   }
   
-  // Send PWM signal to L298N int1 pin while sending low to the int2 pin sets the direction to forward, and the speed to whatever the PWM is
+  // Send PWM signal to MOSFET while sending low to the int2 pin sets the direction to forward, and the speed to whatever the PWM is
   analogWrite(int1, pwmOutput);
 
   delay(100);
