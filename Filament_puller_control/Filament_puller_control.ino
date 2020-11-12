@@ -14,7 +14,7 @@
 
 //Transistor-switch motor controller
   const int int1 = 6; //L298N mini H-bridge motor controller input 1 goes to pin 6 -- these need to be PWN pins. On the Nano Every that's D3, D5, D6, D9, D10
-  int pwmOutput = 80; //variable determining motor speed, starts at 50
+  int pwmOutput = 50; //variable determining motor speed, starts at 40
 
 //Mitutoyo data variables
   int i = 0;
@@ -23,7 +23,7 @@
   int MITread;
   int MITreadAve;
   int MITreadAveDiff;
-  const int FilamentDiam = 175; //Sets the filament diameter goal we want. Units are mm/100
+  const int FilamentDiam = 145; //Sets the filament diameter goal we want. Units are mm/100
   byte mydata[14];
   String value_str;
   long value_int;
@@ -31,7 +31,7 @@
 
   //We'll use millis as a timer to loop through multiple samplings of the Mitutoyo readings, and a samplecounter to set and keep track of the number of samples taken before averaging the reads
   unsigned long previousMillis = 0; //set to zero to begin
-  const int intervalMillis = 500; //sets the sampling interval that we want -- let's set the interval to 0.5 seconds for now
+  const int intervalMillis = 250; //sets the sampling interval that we want -- let's set the interval to 0.5 seconds for now
   unsigned int sampleCount = 0; //placeholder to count the number of sample readings taken from the Mitutoyo
   const byte sampleNum = 6; //sets the number of samples we want to take before averaging-- let's set this to 6 for now, which gives us an average reading over 3 seconds
   unsigned int MITreadTotal = 0; //placeholder to add each new reading to. This will be divided by sampleNum once sampleNum is reached to get an average
@@ -109,21 +109,21 @@ void loop() {
       //L298N mini H-bridge motor controller
       //the motor speed is only adjusted once all readings have been taken and averaged
       
-      MITreadAveDiff = FilamentDiam - MITreadAve + 7; //Difference between MITreadAve and the goal FilamentDiam. We add 7 to compensate for the dip in the U-groove bearing that the plunge tip can't get into.
+      MITreadAveDiff = FilamentDiam - MITreadAve; //Difference between MITreadAve and the goal FilamentDiam. We add 7 to compensate for the dip in the U-groove bearing that the plunge tip can't get into.
     
       if(MITreadAve > 10 && MITreadAve < 600){
 
-        pwmOutput = pwmOutput - MITreadAveDiff/20;
+        pwmOutput = pwmOutput - MITreadAveDiff/10;
         
         if(pwmOutput > 254){
           pwmOutput = 254;
           } 
-        else if(pwmOutput < 80){
-          pwmOutput = 80;
+        else if(pwmOutput < 50){
+          pwmOutput = 50;
           }
           
       } else {
-         pwmOutput = 80;
+         pwmOutput = 50;
         } 
 
       Serial.print("PWM ");
