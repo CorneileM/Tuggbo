@@ -1,5 +1,5 @@
 // This Arduino sketch reads the voltage across a NTC (negative-temperature coefficient) thermistor, converts it to a temperature reading
-// and switches a MOSFET connected to a heater cartidge on and of through a PWM signal to keep the temperature close to a set point which is controlled by a rotary encoder.
+// and switches a MOSFET connected to a heater cartridge on and of through a PWM signal to keep the temperature close to a set point which is controlled by a rotary encoder.
 // Both the set point temperature and actual temperature are displayed on a LCD screen
 
 //**CODE SOURCES**//
