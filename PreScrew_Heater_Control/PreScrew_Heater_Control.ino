@@ -72,6 +72,9 @@
                                                                       //P_ON_M specifies that Proportional on Measurement be used (see: http://brettbeauregard.com/blog/2017/06/introducing-proportional-on-measurement/)
                                                                       //We also specify REVERSE instead of DIRECT, since the thicker the filament gets, the faster the motor needs to go
 
+  //*MOSFET heater switch*//
+    const int MOSFET = 6; //MOSFET PID (PWM) output goes through pin 6 -- this needs to be a PWN pin. On the Nano Every that's D3, D5, D6, D9, D10
+
 void setup() {
 
   //setup pins and interrupts for rotary encoder
@@ -101,11 +104,11 @@ void setup() {
   //set analog reference to read AREF pin
   analogReference(EXTERNAL);
 
-  //setup LCD
+  //setup LCD  
   lcd.begin(16,2); // initialize the lcd 
   lcd.setBacklightPin(3,POSITIVE);
   lcd.setBacklight(HIGH);
-  lcd.clear ();
+  lcd.clear();
   lcd.setCursor(0,0);  
   lcd.print("T:       Tset:"); // print prepeositions of temperature and Tset on LCD 
 
@@ -119,25 +122,29 @@ void setup() {
 
 void PinA(){
   cli(); //stop interrupts happening before we read pin values
-  reading = PIND & 0xC; // read all eight pin values then strip away all but pinA and pinB's values
-  if(reading == B00001100 && aFlag) { //check that we have both pins at detent (HIGH) and that we are expecting detent on this pin's rising edge
+  // reading =PIND & 0xC; // read all eight pin values then strip away all but pinA and pinB's values
+  // if(reading == B00001100 && aFlag) { //check that we have both pins at detent (HIGH) and that we are expecting detent on this pin's rising edge
+  if ( ( PORTA.IN & PIN0_bm ) && ( PORTF.IN & PIN5_bm ) && aFlag )  { // if D2 && D3 check that we have both pins at detent (HIGH) and that we are expecting detent on this pin's rising edge
     encoderPos --; //decrement the encoder's position count
     bFlag = 0; //reset flags for the next turn
     aFlag = 0; //reset flags for the next turn
   }
-  else if (reading == B00000100) bFlag = 1; //signal that we're expecting pinB to signal the transition to detent from free rotation
+  // else if (reading == B00000100) bFlag = 1; //signal that we're expecting pinB to signal the transition to detent from free rotation
+  else if ( PORTA.IN & PIN0_bm ) bFlag = 1; // if D2, signal that we're expecting pinB to signal the transition to detent from free rotation
   sei(); //restart interrupts
 }
 
 void PinB(){
   cli(); //stop interrupts happening before we read pin values
-  reading = PIND & 0xC; //read all eight pin values then strip away all but pinA and pinB's values
-  if (reading == B00001100 && bFlag) { //check that we have both pins at detent (HIGH) and that we are expecting detent on this pin's rising edge
-      encoderPos ++; //increment the encoder's position count
-      bFlag = 0; //reset flags for the next turn
+  // reading =PIND & 0xC; // read all eight pin values then strip away all but pinA and pinB's values
+  // if(reading == B00001100 && aFlag) { //check that we have both pins at detent (HIGH) and that we are expecting detent on this pin's rising edge
+  if ( ( PORTA.IN & PIN0_bm ) && ( PORTF.IN & PIN5_bm ) && bFlag )  { // if D2 && D3 check that we have both pins at detent (HIGH) and that we are expecting detent on this pin's rising edge
+    encoderPos --; //decrement the encoder's position count
+    bFlag = 0; //reset flags for the next turn
     aFlag = 0; //reset flags for the next turn
   }
-  else if (reading == B00001000) aFlag = 1; //signal that we're expecting pinA to signal the transition to detent from free rotation
+  // else if (reading == B00000100) bFlag = 1; //signal that we're expecting pinB to signal the transition to detent from free rotation
+  else if ( PORTA.IN & PIN0_bm ) aFlag = 1; // if D2, signal that we're expecting pinB to signal the transition to detent from free rotation
   sei(); //restart interrupts
 }
 
@@ -163,7 +170,7 @@ void loop() {
 //*PID temp control*//
   Input = T_conv;
   heaterPID.Compute();
-  analogWrite(3,Output);
+  analogWrite(MOSFET, Output);
 
 //*DISPLAY TEMPS*//
   //Display actual temp
@@ -177,5 +184,5 @@ void loop() {
   Serial.println(encoderPos); //for debugging purposes
 
   
-  delay(500);
+  delay(250);
 }

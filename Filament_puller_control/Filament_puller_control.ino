@@ -11,7 +11,7 @@
   const int dat = 2; //Mitutoyo Data line goes to pin 2
   const int clk = 3; //Mitutoyo Clock line goes to pin 3
 
-//Transistor-switch motor controller
+//MOSFET motor controller
   const int int1 = 6; //MOSFET PWM output goes through pin 6 -- this needs to be a PWN pin. On the Nano Every that's D3, D5, D6, D9, D10
   int pwmOutput = 50; //variable determining motor speed, starts at 40
 
