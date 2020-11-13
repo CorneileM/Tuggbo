@@ -4,6 +4,7 @@
 
 //**CODE SOURCES**//
 // Thermistor reading code, including calibration coefficients for the thermistor were taken from a blog post by Joshua Hrisko: https://makersportal.com/blog/2019/1/15/arduino-thermistor-theory-calibration-and-experiment
+// Rotary encoder interrupt code for Arduino Nano every adapted from forum discussion: https://forum.arduino.cc/index.php?topic=694732.0 
 
 //**PIN OUTS**//
 
