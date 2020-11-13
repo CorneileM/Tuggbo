@@ -56,48 +56,52 @@
   //*THERMISTOR*//
     #define therm_pin A0
     float T_conv;
-    float V_0 = 3.3; // voltage reference
-    float R_1 = 220000.0; // first resistance value for voltage divider
+    float THERMconvRead;
+    float V_0 = 5; // voltage reference
+    float R_1 = 4700.0; // first resistance value for voltage divider
     
     //fit coefficients
     float a = 283786.2;
     float b = 0.06593;
     float c = 49886.0;
 
+    int avg_size = 10; // averaging size
+
   //*PID TEMPERATURE CONTROL*//
     //define PID Variables
     double Setpoint, Input, Output;
   
     //Specify the links and initial tuning parameters
-    PID heaterPID(&Input, &Output, &Setpoint,9.1,0.3,1.8,P_ON_M, REVERSE); //PID coefficients were taken from http://electronoobs.com/eng_arduino_tut24_2.php as a starting poinoinoi
+    PID heaterPID(&Input, &Output, &Setpoint,9.1,0.3,1.8,P_ON_M, DIRECT); //PID coefficients were taken from http://electronoobs.com/eng_arduino_tut24_2.php as a starting poinoinoi
                                                                       //P_ON_M specifies that Proportional on Measurement be used (see: http://brettbeauregard.com/blog/2017/06/introducing-proportional-on-measurement/)
-                                                                      //We also specify REVERSE instead of DIRECT, since the thicker the filament gets, the faster the motor needs to go
+                                                                      //We also specify DIRECT, since the hotter the cartridge gets, the lower the output needs to be
 
   //*MOSFET heater switch*//
     const int MOSFET = 6; //MOSFET PID (PWM) output goes through pin 6 -- this needs to be a PWN pin. On the Nano Every that's D3, D5, D6, D9, D10
+
+  //*TIMING VARIABLES*//
+    //We'll use millis as a timer to loop through multiple samplings of the thermistor, and a samplecounter to set and keep track of the number of samples taken before averaging the reads
+    unsigned long previousMillis = 0; //set to zero to begin
+    const int intervalMillis = 100; //sets the sampling interval that we want -- let's set the interval to 0.2 seconds for now
+    unsigned int sampleCount = 0; //placeholder to count the number of sample readings taken from the Thermistor
+    const byte sampleNum = 10; //sets the number of samples we want to take before averaging-- let's set this to 10 for now, which gives us an average reading over 2 seconds
+    unsigned int THERMreadTotal = 0; //placeholder to add each new reading to. This will be divided by sampleNum once sampleNum is reached to get an average
 
 void setup() {
 
   //setup pins and interrupts for rotary encoder
   pinMode(pinA, INPUT_PULLUP); // set pinA as an input, pulled HIGH to the logic voltage (5V or 3.3V for most cases)
   pinMode(pinB, INPUT_PULLUP); // set pinB as an input, pulled HIGH to the logic voltage (5V or 3.3V for most cases)
-  attachInterrupt(0,PinA,RISING); // set an interrupt on PinA, looking for a rising edge signal and executing the "PinA" Interrupt Service Routine (below)
-  attachInterrupt(1,PinB,RISING); // set an interrupt on PinB, looking for a rising edge signal and executing the "PinB" Interrupt Service Routine (below)
+  attachInterrupt(digitalPinToInterrupt(pinA), PinA, RISING); // set an interrupt on PinA, looking for a rising edge signal and executing the "PinA" Interrupt Service Routine (below)
+  attachInterrupt(digitalPinToInterrupt(pinB), PinB, RISING); // set an interrupt on PinB, looking for a rising edge signal and executing the "PinB" Interrupt Service Routine (below)
 
   //initialize serial communication at 9600 bits per second:
   Serial.begin(9600);
 
-  //initialize PID variables
-   //read the input on analog pin 0:
-    int T_read = analogRead(therm_pin);
-    //Convert the analog reading (which goes from 0 - 1023) to voltage reference (3.3V or 5V or other):
-    float T_voltage = (T_read/1023.0)*V_0;
+  pinMode(therm_pin,INPUT);
 
-    //this is where the thermistor conversion happens based on parameters from fit
-    T_conv = (-1.0/b)*(log(((R_1*T_voltage)/(a*(V_0-T_voltage)))-(c/a)));
-    
   Input = T_conv;
-  Setpoint = 100;
+  Setpoint = encoderPos;
 
   //turn the PID on
   heaterPID.SetMode(AUTOMATIC);
@@ -111,10 +115,12 @@ void setup() {
   lcd.setBacklight(HIGH);
   lcd.clear();
   lcd.setCursor(0,0);  
-  lcd.print("T:       Tset:"); // print prepeositions of temperature and Tset on LCD 
+  lcd.print("T:      Tset:"); // print prepeositions of temperature and Tset on LCD 
+  lcd.setCursor(0,1);  
+  lcd.print("Output:   "); // print prepeositions of temperature and Tset on LCD 
 
   // Display default Tset
-  lcd.setCursor(14,0);
+  lcd.setCursor(13,0);
   lcd.print(encoderPos);   
     
 }
@@ -131,21 +137,21 @@ void PinA(){
     aFlag = 0; //reset flags for the next turn
   }
   // else if (reading == B00000100) bFlag = 1; //signal that we're expecting pinB to signal the transition to detent from free rotation
-  else if ( PORTA.IN & PIN0_bm ) bFlag = 1; // if D2, signal that we're expecting pinB to signal the transition to detent from free rotation
+  else if (PORTA.IN & PIN0_bm) bFlag = 1; // if D2, signal that we're expecting pinB to signal the transition to detent from free rotation
   sei(); //restart interrupts
 }
 
 void PinB(){
   cli(); //stop interrupts happening before we read pin values
   // reading =PIND & 0xC; // read all eight pin values then strip away all but pinA and pinB's values
-  // if(reading == B00001100 && aFlag) { //check that we have both pins at detent (HIGH) and that we are expecting detent on this pin's rising edge
+  // if(reading == B00001100 && bFlag) { //check that we have both pins at detent (HIGH) and that we are expecting detent on this pin's rising edge
   if ( ( PORTA.IN & PIN0_bm ) && ( PORTF.IN & PIN5_bm ) && bFlag )  { // if D2 && D3 check that we have both pins at detent (HIGH) and that we are expecting detent on this pin's rising edge
-    encoderPos --; //decrement the encoder's position count
+    encoderPos ++; //increment the encoder's position count
     bFlag = 0; //reset flags for the next turn
     aFlag = 0; //reset flags for the next turn
   }
-  // else if (reading == B00000100) bFlag = 1; //signal that we're expecting pinB to signal the transition to detent from free rotation
-  else if ( PORTA.IN & PIN0_bm ) aFlag = 1; // if D2, signal that we're expecting pinB to signal the transition to detent from free rotation
+  // else if (reading == B00000100) aFlag = 1; //signal that we're expecting pinB to signal the transition to detent from free rotation
+  else if (PORTF.IN & PIN5_bm) aFlag = 1; // if D3, signal that we're expecting pinA to signal the transition to detent from free rotation
   sei(); //restart interrupts
 }
 
@@ -160,30 +166,64 @@ void loop() {
    }
    
 //*READ THERMISTOR*//
-  //read the input on analog pin 0:
-  int T_read = analogRead(therm_pin);
-  //Convert the analog reading (which goes from 0 - 1023) to voltage reference (3.3V or 5V or other):
-  float T_voltage = (T_read/1023.0)*V_0;
 
-  //this is where the thermistor conversion happens based on parameters from fit
-  T_conv = (-1.0/b)*(log(((R_1*T_voltage)/(a*(V_0-T_voltage)))-(c/a)));
-
-//*PID temp control*//
-  Input = T_conv;
-  heaterPID.Compute();
-  analogWrite(MOSFET, Output);
-
-//*DISPLAY TEMPS*//
-  //Display actual temp
-  lcd.setCursor(2,0);
-  lcd.print(T_conv);
-  Serial.println(T_conv); //for debugging purposes
+  //Loop to take the average of sampleNum separate readings from Mitutoyo taken at intervalMillis
   
-  //Display set temp
-  lcd.setCursor(14,0);
-  lcd.print(encoderPos);
-  Serial.println(encoderPos); //for debugging purposes
+  if(millis() - previousMillis >= intervalMillis) {
+    
+    previousMillis = millis();
+    sampleCount++;
 
+    //Read the analog value from the termistor pin
+    int T_read = analogRead(therm_pin);
+    // Convert the analog reading (which goes from 0 - 1023) to voltage reference (3.3V or 5V or other):
+    float T_voltage = (T_read/1023.0)*V_0;
+
+    // this is where the thermistor conversion happens based on parameters from fit
+    THERMconvRead = (-1.0/b)*(log(((R_1*T_voltage)/(a*(V_0-T_voltage)))-(c/a)));
+
+    THERMreadTotal = THERMreadTotal + THERMconvRead;
+  }
   
-  delay(250);
+  if(sampleCount == sampleNum){
+    
+      T_conv = THERMreadTotal/sampleNum; //tak the average of all the termistor reads
+
+      // reset counters for the next loop
+      sampleCount = 0;
+      THERMreadTotal = 0;
+
+    //*PID temp control*//
+      Input = T_conv;
+      Setpoint = encoderPos;
+      heaterPID.Compute();
+      analogWrite(MOSFET, Output);
+
+    //*DISPLAY TEMPS AND OUTPUT*//
+      //Display actual temp
+      lcd.setCursor(2,0);
+      lcd.print("      ");
+      lcd.setCursor(2,0);
+      lcd.print(T_conv);
+      Serial.print("T: "); //for debugging purposes
+      Serial.println(T_conv); //for debugging purposes
+  
+      //Display set temp
+      lcd.setCursor(13,0);
+      lcd.print("   ");
+      lcd.setCursor(13,0);
+      lcd.print(encoderPos);
+      Serial.print("Tset: ");
+      Serial.println(encoderPos); //for debugging purposes
+    
+      //Display Output
+      lcd.setCursor(9,1);
+      lcd.print("   ");
+      lcd.setCursor(9,1);
+      lcd.print(Output);
+      Serial.print("Output: "); //for debugging purposes
+      Serial.println(Output); //for debugging purposes
+  }
+  
+  delay(100);
 }
