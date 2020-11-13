@@ -38,6 +38,7 @@
 #include <LiquidCrystal_I2C.h>
 #include <math.h>
 #include <PID_v1.h>
+#include <thermistor.h>
 
 //**PIN AND VARIABLE DECLARATIONS**//
 
@@ -54,18 +55,9 @@
     volatile byte reading = 0; //somewhere to store the direct values we read from our interrupt pins before checking to see if we have moved a whole detent
 
   //*THERMISTOR*//
-    #define therm_pin A0
+    thermistor therm1(A0,80);  // Analog Pin which is connected to the 3950 thermistor 100K connected to a 4k7 Pull up and 10Uf Capacitor. 80 represents the configuration in the library for this thermistor
     float T_conv;
     float THERMconvRead;
-    float V_0 = 5; // voltage reference
-    float R_1 = 4700.0; // first resistance value for voltage divider
-    
-    //fit coefficients
-    float a = 283786.2;
-    float b = 0.06593;
-    float c = 49886.0;
-
-    int avg_size = 10; // averaging size
 
   //*PID TEMPERATURE CONTROL*//
     //define PID Variables
@@ -97,8 +89,6 @@ void setup() {
 
   //initialize serial communication at 9600 bits per second:
   Serial.begin(9600);
-
-  pinMode(therm_pin,INPUT);
 
   Input = T_conv;
   Setpoint = encoderPos;
@@ -164,24 +154,27 @@ void loop() {
     Serial.println(encoderPos);
     oldEncPos = encoderPos;
    }
+
+  //Display set temp
+  lcd.setCursor(13,0);
+  lcd.print("   ");
+  lcd.setCursor(13,0);
+  lcd.print(encoderPos);
+  Serial.print("Tset: ");
+  Serial.println(encoderPos); //for debugging purposes
    
 //*READ THERMISTOR*//
 
   //Loop to take the average of sampleNum separate readings from Mitutoyo taken at intervalMillis
-  
   if(millis() - previousMillis >= intervalMillis) {
     
     previousMillis = millis();
     sampleCount++;
 
     //Read the analog value from the termistor pin
-    int T_read = analogRead(therm_pin);
-    // Convert the analog reading (which goes from 0 - 1023) to voltage reference (3.3V or 5V or other):
-    float T_voltage = (T_read/1023.0)*V_0;
+    double THERMconvRead = therm1.analog2temp(); // read temperature
 
-    // this is where the thermistor conversion happens based on parameters from fit
-    THERMconvRead = (-1.0/b)*(log(((R_1*T_voltage)/(a*(V_0-T_voltage)))-(c/a)));
-
+    //add the reading to the total to be averaged later
     THERMreadTotal = THERMreadTotal + THERMconvRead;
   }
   
@@ -193,13 +186,7 @@ void loop() {
       sampleCount = 0;
       THERMreadTotal = 0;
 
-    //*PID temp control*//
-      Input = T_conv;
-      Setpoint = encoderPos;
-      heaterPID.Compute();
-      analogWrite(MOSFET, Output);
-
-    //*DISPLAY TEMPS AND OUTPUT*//
+    //*DISPLAY TEMP*//
       //Display actual temp
       lcd.setCursor(2,0);
       lcd.print("      ");
@@ -207,15 +194,15 @@ void loop() {
       lcd.print(T_conv);
       Serial.print("T: "); //for debugging purposes
       Serial.println(T_conv); //for debugging purposes
-  
-      //Display set temp
-      lcd.setCursor(13,0);
-      lcd.print("   ");
-      lcd.setCursor(13,0);
-      lcd.print(encoderPos);
-      Serial.print("Tset: ");
-      Serial.println(encoderPos); //for debugging purposes
-    
+      
+  }    
+
+    //*PID temp control*//
+      Input = T_conv;
+      Setpoint = encoderPos;
+      heaterPID.Compute();
+      analogWrite(MOSFET, Output);
+
       //Display Output
       lcd.setCursor(9,1);
       lcd.print("   ");
@@ -223,7 +210,6 @@ void loop() {
       lcd.print(Output);
       Serial.print("Output: "); //for debugging purposes
       Serial.println(Output); //for debugging purposes
-  }
   
-  delay(100);
+  delay(200);
 }
