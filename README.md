@@ -1,4 +1,5 @@
 # Tuggbo
+## Type: Robot/Thingy
 ### An automated filament pulling device to control 3D-printer filament diameter when exiting a filament extruder
 
 This repository contains circuit diagrams, 3D-printed parts, and Arduino sketches for a filament pulling device designed to control the diameter of 3D-printer filament
