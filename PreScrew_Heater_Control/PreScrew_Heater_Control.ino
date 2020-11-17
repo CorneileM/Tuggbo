@@ -90,10 +90,9 @@ void setup() {
   //initialize serial communication at 9600 bits per second:
   Serial.begin(9600);
 
+  //Define Input and Setpoint and turn the PID on
   Input = T_conv;
   Setpoint = encoderPos;
-
-  //turn the PID on
   heaterPID.SetMode(AUTOMATIC);
 
   //set analog reference to read AREF pin
