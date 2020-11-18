@@ -34,8 +34,8 @@
   //*PID FILAMENT DIAMETER CONTROL*//
     //define PID Variables
     double Setpoint, Input, Output;
-    float Kp = 1.1; //The proportional gain (Kp) determines the ratio of output response to the error signal. In general, increasing the proportional gain will increase the speed of the control system response
-                  //I'm setting this to 2, since 9.1 (used for the pre-screw heater seems like it would lead to too much oscilation -- quick motor speed adjustments can also cause filament strand breakage
+    float Kp = 0.25; //The proportional gain (Kp) determines the ratio of output response to the error signal. In general, increasing the proportional gain will increase the speed of the control system response
+                  //I'm setting this to 0.25, since preliminary tests showed that Tuggbo was reacting too quickly, even at Kp = 2
                   
     float Ki = 0.3; //The integral component sums the error term over time. The result is that even a small error term will cause the integral component to increase slowly.
                     //The integral response will continually increase over time unless the error is zero, so the effect is to drive the Steady-State error to zero.
@@ -145,16 +145,16 @@ void loop() {
   if(MITreadAve <0.2) { 
       // Send PWM signal (motor minimum speed) to MOSFET
       analogWrite(MOSFET, pwmStart);
-      Serial.print("NO FILAMENT -- motor speed: ");
-      Serial.println(pwmStart);
+      Serial.print("NO FILAMENT -- motor speed: "); //for debugging purposes
+      Serial.println(pwmStart); //for debugging purposes
 
   } else { 
       Input = MITreadAve;
       Setpoint = FilamentDiam;
       tuggboPID.Compute();
       analogWrite(MOSFET, Output);
-      Serial.print("motor speed: ");
-      Serial.println(Output);
+      Serial.print("motor speed: "); //for debugging purposes
+      Serial.println(Output); //for debugging purposes
   }
 
 delay(100);
