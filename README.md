@@ -9,3 +9,10 @@ which is read from a Mitutoyo digital plunge-dial indicator, to obtain a stable 
 
 The repository also includes an Arduino sketch and circuit diagram for a PID controlled heater that is placed inside the FILABOT EX2 hopper, to pre-heat and soften plastic pellets 
 before entering the extrusion screw. This functions to prevent the the extrusion screw from being blocked by large pieces of hard plastic.
+
+### Useful resources and background information
+#### PID process control
+[Arduino PID library](https://playground.arduino.cc/Code/PIDLibrary/)
+
+[PID explained for process engineers](https://www.aiche.org/resources/publications/cep/2016/february/pid-explained-process-engineers-part-2-tuning-coefficients)
+
