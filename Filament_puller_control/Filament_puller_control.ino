@@ -34,28 +34,29 @@
   //*PID FILAMENT DIAMETER CONTROL*//
     //define PID Variables
     double Setpoint, Input, Output;
-    float Kp = 0.25; //The proportional gain (Kp) determines the ratio of output response to the error signal. In general, increasing the proportional gain will increase the speed of the control system response
+    float Kp = 0.001; //The proportional gain (Kp) determines the ratio of output response to the error signal. In general, increasing the proportional gain will increase the speed of the control system response
                   //I'm setting this to 0.25, since preliminary tests showed that Tuggbo was reacting too quickly, even at Kp = 2
                   
-    float Ki = 0.3; //The integral component sums the error term over time. The result is that even a small error term will cause the integral component to increase slowly.
+    float Ki = 0.01; //The integral component sums the error term over time. The result is that even a small error term will cause the integral component to increase slowly.
                     //The integral response will continually increase over time unless the error is zero, so the effect is to drive the Steady-State error to zero.
 
-    float Kd = 1; //The derivative component causes the output to decrease if the process variable is increasing rapidly (in our case, this is reversed).
-                 //The derivative response is proportional to the rate of change of the process variable.
-                 //Increasing the derivative time (Td) parameter will cause the control system to react more strongly to changes in the error term and will increase the speed of the overall control system response.
-                 //Most practical control systems use very small derivative time (Td), because the Derivative Response is highly sensitive to noise in the process variable signal.
+    float Kd = 0.001; //The derivative component causes the output to decrease if the process variable is increasing rapidly (in our case, this is reversed).
+                  //The derivative response is proportional to the rate of change of the process variable.
+                  //Increasing the derivative time (Td) parameter will cause the control system to react more strongly to changes in the error term and will increase the speed of the overall control system response.
+                  //Most practical control systems use very small derivative time (Td), because the Derivative Response is highly sensitive to noise in the process variable signal.
     
     //Specify the links and initial tuning parameters
-    PID tuggboPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, P_ON_M, REVERSE); //PID coefficients were taken from http://electronoobs.com/eng_arduino_tut24_2.php as a starting poinoinoi
-                                                                      //P_ON_M specifies that Proportional on Measurement be used (see: http://brettbeauregard.com/blog/2017/06/introducing-proportional-on-measurement/)
+    PID tuggboPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, P_ON_E, REVERSE); //PID coefficients were taken from http://electronoobs.com/eng_arduino_tut24_2.php as a starting poinoinoi
+                                                                      //I used to have the PID run on P_ON_M mode (proportional on measurement), but this seemed to make the PID very "scared" of going too close to the setpoint
+                                                                      //Overshoot is not a big deal in this application, so I've switched this back to the standard proportional on error mode (P_ON_E)
                                                                       //We specify REVERSE, since the thicker the filament gets, the higher the output needs to be
   
   //*TIMING VARIABLES*//
     //We'll use millis as a timer to loop through multiple samplings of the Mitutoyo readings, and a samplecounter to set and keep track of the number of samples taken before averaging the reads
     unsigned long previousMillis = 0; //set to zero to begin
-    const int intervalMillis = 100; //sets the sampling interval that we want -- let's set the interval to 0.1 seconds for now
+    const int intervalMillis = 25; //sets the sampling interval that we want -- let's set the interval to 0.1 seconds for now
     unsigned int sampleCount = 0; //placeholder to count the number of sample readings taken from the Mitutoyo
-    const byte sampleNum = 6; //sets the number of samples we want to take before averaging-- let's set this to 6 for now, which gives us an average reading over 0.6 seconds
+    const byte sampleNum = 1; //sets the number of samples we want to take before averaging-- let's set this to 6 for now, which gives us an average reading over 0.6 seconds
     unsigned int MITreadTotal = 0; //placeholder to add each new reading to. This will be divided by sampleNum once sampleNum is reached to get an average
 
     
@@ -76,7 +77,7 @@ void setup() {
   //Define Input and Setpoint and turn the PID on
   Input = MITreadAve;
   Setpoint = FilamentDiam;
-  tuggboPID.SetOutputLimits(50, 255); //since the motor only starts working at 50 PWM, we need to set the PWM min to 50 (the max remains at the PWM max of 255)
+  tuggboPID.SetOutputLimits(50, 150); //since the motor only starts working at 50 PWM, we need to set the PWM min to 50 (the max remains at the PWM max of 255. Also at 255, the motor seems too fast, so I'm capping it at 150
   tuggboPID.SetMode(AUTOMATIC);
 
   //Starts the motor in forward direction at the motor starting speed
@@ -157,6 +158,6 @@ void loop() {
       Serial.println(Output); //for debugging purposes
   }
 
-delay(100);
+delay(50);
 
 }
