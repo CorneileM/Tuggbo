@@ -37,7 +37,7 @@
     float Kp = 0.05; //The proportional gain (Kp) determines the ratio of output response to the error signal. In general, increasing the proportional gain will increase the speed of the control system response
                   //I'm setting this to 0.25, since preliminary tests showed that Tuggbo was reacting too quickly, even at Kp = 2
                   
-    float Ki = 0.01; //The integral component sums the error term over time. The result is that even a small error term will cause the integral component to increase slowly.
+    float Ki = 0.1; //The integral component sums the error term over time. The result is that even a small error term will cause the integral component to increase slowly.
                     //The integral response will continually increase over time unless the error is zero, so the effect is to drive the Steady-State error to zero.
 
     float Kd = 0.001; //The derivative component causes the output to decrease if the process variable is increasing rapidly (in our case, this is reversed).
@@ -54,9 +54,9 @@
   //*TIMING VARIABLES*//
     //We'll use millis as a timer to loop through multiple samplings of the Mitutoyo readings, and a samplecounter to set and keep track of the number of samples taken before averaging the reads
     unsigned long previousMillis = 0; //set to zero to begin
-    const int intervalMillis = 25; //sets the sampling interval that we want -- let's set the interval to 0.1 seconds for now
+    const int intervalMillis = 20; //sets the sampling interval that we want -- let's set the interval to 0.1 seconds for now
     unsigned int sampleCount = 0; //placeholder to count the number of sample readings taken from the Mitutoyo
-    const byte sampleNum = 1; //sets the number of samples we want to take before averaging-- let's set this to 6 for now, which gives us an average reading over 0.6 seconds
+    const byte sampleNum = 2; //sets the number of samples we want to take before averaging-- let's set this to 6 for now, which gives us an average reading over 0.6 seconds
     unsigned int MITreadTotal = 0; //placeholder to add each new reading to. This will be divided by sampleNum once sampleNum is reached to get an average
 
     
@@ -77,7 +77,7 @@ void setup() {
   //Define Input and Setpoint and turn the PID on
   Input = MITreadAve;
   Setpoint = FilamentDiam;
-  tuggboPID.SetOutputLimits(50, 150); //since the motor only starts working at 50 PWM, we need to set the PWM min to 50 (the max remains at the PWM max of 255. Also at 255, the motor seems too fast, so I'm capping it at 150
+  tuggboPID.SetOutputLimits(50, 200); //since the motor only starts working at 50 PWM, we need to set the PWM min to 50 (the max remains at the PWM max of 255. Also at 255, the motor seems too fast, so I'm capping it at 200
   tuggboPID.SetMode(AUTOMATIC);
 
   //Starts the motor in forward direction at the motor starting speed
@@ -158,6 +158,6 @@ void loop() {
       Serial.println(Output); //for debugging purposes
   }
 
-delay(50);
+delay(100);
 
 }
