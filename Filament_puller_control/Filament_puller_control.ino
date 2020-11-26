@@ -34,7 +34,7 @@
   //*PID FILAMENT DIAMETER CONTROL*//
     //define PID Variables
     double Setpoint, Input, Output;
-    float Kp = 0.001; //The proportional gain (Kp) determines the ratio of output response to the error signal. In general, increasing the proportional gain will increase the speed of the control system response
+    float Kp = 0.05; //The proportional gain (Kp) determines the ratio of output response to the error signal. In general, increasing the proportional gain will increase the speed of the control system response
                   //I'm setting this to 0.25, since preliminary tests showed that Tuggbo was reacting too quickly, even at Kp = 2
                   
     float Ki = 0.01; //The integral component sums the error term over time. The result is that even a small error term will cause the integral component to increase slowly.
