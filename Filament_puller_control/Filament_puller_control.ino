@@ -6,6 +6,7 @@
 
 //**LIBRARIES**//
 #include <PID_v1.h>
+#include <MovingAverage.h>
 
 //**PIN AND VARIABLE DECLARATIONS**//
 
@@ -18,7 +19,6 @@
     int i = 0;
     int j = 0;
     int k = 0;
-    int MITread;
     int MITreadAve;
     int MITreadAveDiff;
     const int FilamentDiam = 145; //Sets the filament diameter goal we want. Units are mm/100. Technically, we want 1.75m, but there's a slight groove in our Mitutoyo's pulley, which leads to a 0.3mm offset.
@@ -40,7 +40,7 @@
     float Ki = 0.1; //The integral component sums the error term over time. The result is that even a small error term will cause the integral component to increase slowly.
                     //The integral response will continually increase over time unless the error is zero, so the effect is to drive the Steady-State error to zero.
 
-    float Kd = 0.000001; //The derivative component causes the output to decrease if the process variable is increasing rapidly (in our case, this is reversed).
+    float Kd = 0.001; //The derivative component causes the output to decrease if the process variable is increasing rapidly (in our case, this is reversed).
                   //The derivative response is proportional to the rate of change of the process variable.
                   //Increasing the derivative time (Td) parameter will cause the control system to react more strongly to changes in the error term and will increase the speed of the overall control system response.
                   //Most practical control systems use very small derivative time (Td), because the Derivative Response is highly sensitive to noise in the process variable signal.
@@ -51,13 +51,13 @@
                                                                       //Overshoot is not a big deal in this application, so I've switched this back to the standard proportional on error mode (P_ON_E)
                                                                       //We specify REVERSE, since the thicker the filament gets, the higher the output needs to be
   
-  //*TIMING VARIABLES*//
-    //We'll use millis as a timer to loop through multiple samplings of the Mitutoyo readings, and a samplecounter to set and keep track of the number of samples taken before averaging the reads
-    unsigned long previousMillis = 0; //set to zero to begin
-    const int intervalMillis = 100; //sets the sampling interval that we want -- let's set the interval to 0.1 seconds for now
-    unsigned int sampleCount = 0; //placeholder to count the number of sample readings taken from the Mitutoyo
-    const byte sampleNum = 5; //sets the number of samples we want to take before averaging-- let's set this to 6 for now, which gives us an average reading over 0.6 seconds
-    unsigned int MITreadTotal = 0; //placeholder to add each new reading to. This will be divided by sampleNum once sampleNum is reached to get an average
+  //*MOVING AVERAGE VARIABLES*//
+    //Sets up the movingAverage function with 50 readings (1 per millisecond) per moving average window with a starting value of 0
+    //This function will constantly calcualte a moving average for smoothed Mitutoyo readings -- the moving average window also serves to moderate Tuggbo's control response to make it less jerky 
+    MovingAverage<unsigned> MITread(20, 0);
+
+    // Generates the first input for the MovingAverage function
+    unsigned MITread_x = 0;
 
     
 void setup() {
@@ -65,38 +65,31 @@ void setup() {
   Serial.begin(9600); //Start serial communication
 
   //*MITUTOYO*//
-  pinMode(req, OUTPUT); //Set the req (5) pin as an output so that data requests can be triggered by setting the pin LOW
-  pinMode(clk, INPUT_PULLUP); //To obtain data we will read from the clk and dat pins, so they need to be set to INPUT with internal PULLUP resistors to stop noisy readings
-  pinMode(dat, INPUT_PULLUP); //To obtain data we will read from the clk and dat pins, so they need to be set to INPUT with internal PULLUP resistors to stop noisy readings
-  digitalWrite(req, HIGH); // set initial state of req (5) pin to HIGH so that data can be requested from Mitutoyo by setting the pin LOW
+    pinMode(req, OUTPUT); //Set the req (5) pin as an output so that data requests can be triggered by setting the pin LOW
+    pinMode(clk, INPUT_PULLUP); //To obtain data we will read from the clk and dat pins, so they need to be set to INPUT with internal PULLUP resistors to stop noisy readings
+    pinMode(dat, INPUT_PULLUP); //To obtain data we will read from the clk and dat pins, so they need to be set to INPUT with internal PULLUP resistors to stop noisy readings
+    digitalWrite(req, HIGH); // set initial state of req (5) pin to HIGH so that data can be requested from Mitutoyo by setting the pin LOW
 
   //*MOSFET MOTOR CONTROLLER*//
-  //MOSFET pin is set to output so that we can send PWM signals to control the motor
-  pinMode(MOSFET, OUTPUT); 
+    //MOSFET pin is set to output so that we can send PWM signals to control the motor
+    pinMode(MOSFET, OUTPUT); 
 
-  //Define Input and Setpoint and turn the PID on
-  Input = MITreadAve;
-  Setpoint = FilamentDiam;
-  tuggboPID.SetOutputLimits(45, 200); //since the motor only starts working at 50 PWM, we need to set the PWM min to 50 (the max remains at the PWM max of 255. Also at 255, the motor seems too fast, so I'm capping it at 200
-  tuggboPID.SetMode(AUTOMATIC);
+    //Define Input and Setpoint and turn the PID on
+    Input = MITreadAve;
+    Setpoint = FilamentDiam;
+    tuggboPID.SetOutputLimits(45, 200); //since the motor only starts working at 50 PWM, we need to set the PWM min to 50 (the max remains at the PWM max of 255. Also at 255, the motor seems too fast, so I'm capping it at 200
+    tuggboPID.SetMode(AUTOMATIC);
 
-  //Starts the motor in forward direction at the motor starting speed
-  analogWrite(MOSFET, pwmStart);
+    //Starts the motor in forward direction at the motor starting speed
+    analogWrite(MOSFET, pwmStart);
   
 }
 
 void loop() {
 
  //*MITUTOYO*//
- //get readings from the SPC cable (see https://www.instructables.com/id/Interfacing-a-Digital-Micrometer-to-a-Microcontrol/ for details)
-
-  //Loop to take the average of sampleNum separate readings from Mitutoyo taken at intervalMillis
+   //get readings from the SPC cable (see https://www.instructables.com/id/Interfacing-a-Digital-Micrometer-to-a-Microcontrol/ for details)
   
-  if(millis() - previousMillis >= intervalMillis) {
-    
-    previousMillis = millis();
-    sampleCount++;
-       
     digitalWrite(req, LOW); // request data from Mitutoyo
 
     for( i = 0; i < 13; i++ ) {
@@ -117,44 +110,43 @@ void loop() {
     for(int lp=0;lp<6;lp++)
     buf[lp]=mydata[lp+5]+'0';
     buf[6]=0;
-    MITread = atol(buf); //assembled measurement, no decimal place added
-
-    //Serial.print("r ");
-    //Serial.println(MITread);
+    MITread_x = atol(buf); //assembled measurement, no decimal place added
    
     digitalWrite(req, HIGH); //reset req (5) pin to HIGH to stop data request
     
-    MITreadTotal = MITreadTotal + MITread;
-  }
+  //*MOVING AVERAGE CALCULATION*//
+    // Pushes the MITUTOYO reading as an input to the moving average object
+    MITread.push(MITread_x);
 
-  if(sampleCount == sampleNum){
+    // Prints each value stored in the moving average for debugging
+    for (uint8_t i = 0; i < MITread.size(); i++) {
+      Serial.print(MITread[i]);
+      Serial.print(" ");
+    }  
+
+    MITreadAve = MITread.get();
+    //Prints the moving average
+    Serial.print(" = ");
+    Serial.print(MITread.get());
     
-      MITreadAve = MITreadTotal/sampleNum;
+    //*PID FILAMENT DIAMETER CONTROL*//
+    //if there is no filament is present, we want the motor to continue turning at its minimum speed (0.2 mm is a safe margin for no filament being present)
+    //if filament has been fed in (i.e., the Mitutoyo reads higher than 0.2) start PID motor control  
+    if(MITreadAve <0.2) { 
+        // Send PWM signal (motor minimum speed) to MOSFET
+        analogWrite(MOSFET, pwmStart);
+        Serial.print("NO FILAMENT -- motor speed: "); //for debugging purposes
+        Serial.println(pwmStart); //for debugging purposes
+  
+    } else { 
+        Input = MITreadAve;
+        Setpoint = FilamentDiam;
+        tuggboPID.Compute();
+        analogWrite(MOSFET, Output);
+        Serial.print("motor speed: "); //for debugging purposes
+        Serial.println(Output); //for debugging purposes
+        }
 
-      Serial.print("ave: ");
-      Serial.println(MITreadAve);
-
-      // reset counters for the next loop
-      sampleCount = 0;
-      MITreadTotal = 0;
-
-      //*PID FILAMENT DIAMETER CONTROL*//
-      //if there is no filament is present, we want the motor to continue turning at its minimum speed (0.2 mm is a safe margin for no filament being present)
-      //if filament has been fed in (i.e., the Mitutoyo reads higher than 0.2) start PID motor control  
-      if(MITreadAve <0.2) { 
-          // Send PWM signal (motor minimum speed) to MOSFET
-          analogWrite(MOSFET, pwmStart);
-          Serial.print("NO FILAMENT -- motor speed: "); //for debugging purposes
-          Serial.println(pwmStart); //for debugging purposes
-    
-      } else { 
-          Input = MITreadAve;
-          Setpoint = FilamentDiam;
-          tuggboPID.Compute();
-          analogWrite(MOSFET, Output);
-          Serial.print("motor speed: "); //for debugging purposes
-          Serial.println(Output); //for debugging purposes
-          }     
-  }
+delay(1);
 
 }
