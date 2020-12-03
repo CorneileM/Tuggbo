@@ -67,7 +67,7 @@
     PID heaterPID(&Input, &Output, &Setpoint,9.1,0.3,1.8,P_ON_M, DIRECT); //PID coefficients were taken from http://electronoobs.com/eng_arduino_tut24_2.php as a starting poinoinoi
                                                                       //P_ON_M specifies that Proportional on Measurement be used (see: http://brettbeauregard.com/blog/2017/06/introducing-proportional-on-measurement/)
                                                                       //We also specify DIRECT, since the hotter the cartridge gets, the lower the output needs to be
-
+                                                                      
   //*MOSFET heater switch*//
     const int MOSFET = 6; //MOSFET PID (PWM) output goes through pin 6 -- this needs to be a PWN pin. On the Nano Every that's D3, D5, D6, D9, D10
 
@@ -90,10 +90,9 @@ void setup() {
   //initialize serial communication at 9600 bits per second:
   Serial.begin(9600);
 
+  //Define Input and Setpoint and turn the PID on
   Input = T_conv;
   Setpoint = encoderPos;
-
-  //turn the PID on
   heaterPID.SetMode(AUTOMATIC);
 
   //set analog reference to read AREF pin
