@@ -37,11 +37,12 @@
     float Kp = 0.2; //The proportional gain (Kp) determines the ratio of output response to the error signal. In general, increasing the proportional gain will increase the speed of the control system response
                   //I'm setting this to 0.25, since preliminary tests showed that Tuggbo was reacting too quickly, even at Kp = 2
                   
-    float Ki = 0.1; //The integral component sums the error term over time. The result is that even a small error term will cause the integral component to increase slowly.
+    float Ki = 0.05; //The integral component sums the error term over time. The result is that even a small error term will cause the integral component to increase slowly.
                     //The integral response will continually increase over time unless the error is zero, so the effect is to drive the Steady-State error to zero.
+                    //Previously 0.1
 
     float Kd = 0.005; //The derivative component causes the output to decrease if the process variable is increasing rapidly (in our case, this is reversed).
-                  //The derivative response is proportional to the rate of change of the process variable.
+                  //The derivative response is proportional to the rate of chMange of the process variable.
                   //Increasing the derivative time (Td) parameter will cause the control system to react more strongly to changes in the error term and will increase the speed of the overall control system response.
                   //Most practical control systems use very small derivative time (Td), because the Derivative Response is highly sensitive to noise in the process variable signal.
     
@@ -118,6 +119,9 @@ void loop() {
     // Pushes the MITUTOYO reading as an input to the moving average object
     if(MITread_x > 170){ // outliers sometimes pop up and cause shit... this eliminates false highs
       MITread_x = 169;
+      
+    }if(MITread_x < 70){ // outliers sometimes pop up and cause shit... this eliminates false highs
+      MITread_x = 70;
     }
     
     MITread.push(MITread_x);
@@ -136,7 +140,7 @@ void loop() {
     //*PID FILAMENT DIAMETER CONTROL*//
     //if there is no filament is present, we want the motor to continue turning at its minimum speed (0.2 mm is a safe margin for no filament being present)
     //if filament has been fed in (i.e., the Mitutoyo reads higher than 0.2) start PID motor control  
-    if(MITreadAve <50) { 
+    if(MITreadAve <70) { 
        Serial.print("   NO FILAMENT: "); //for debugging purposes
        Serial.println(pwmStart); //for debugging purpose
        analogWrite(MOSFET, pwmStart); 
