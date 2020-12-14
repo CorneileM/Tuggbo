@@ -29,19 +29,20 @@
   
   //*MOSFET MOTOR CONTROLLER*//
     const int MOSFET = 6; //MOSFET PID (PWM) output goes through pin 6 -- this needs to be a PWN pin. On the Nano Every that's D3, D5, D6, D9, D10
-    int pwmStart = 43; //variable determining motor speed, starts at 40
+    int pwmStart = 43; //variable determining motor speed, starts at 43
 
   //*PID FILAMENT DIAMETER CONTROL*//
     //define PID Variables
     double Setpoint, Input, Output;
-    float Kp = 0.2; //The proportional gain (Kp) determines the ratio of output response to the error signal. In general, increasing the proportional gain will increase the speed of the control system response
+    float Kp = 0.3; //The proportional gain (Kp) determines the ratio of output response to the error signal. In general, increasing the proportional gain will increase the speed of the control system response
                   //I'm setting this to 0.25, since preliminary tests showed that Tuggbo was reacting too quickly, even at Kp = 2
+                  //0.2 was too slow
                   
     float Ki = 0.05; //The integral component sums the error term over time. The result is that even a small error term will cause the integral component to increase slowly.
                     //The integral response will continually increase over time unless the error is zero, so the effect is to drive the Steady-State error to zero.
                     //Previously 0.1
 
-    float Kd = 0.005; //The derivative component causes the output to decrease if the process variable is increasing rapidly (in our case, this is reversed).
+    float Kd = 0.01; //The derivative component causes the output to decrease if the process variable is increasing rapidly (in our case, this is reversed).
                   //The derivative response is proportional to the rate of chMange of the process variable.
                   //Increasing the derivative time (Td) parameter will cause the control system to react more strongly to changes in the error term and will increase the speed of the overall control system response.
                   //Most practical control systems use very small derivative time (Td), because the Derivative Response is highly sensitive to noise in the process variable signal.
@@ -78,7 +79,7 @@ void setup() {
     //Define Input and Setpoint and turn the PID on
     Input = MITreadAve;
     Setpoint = FilamentDiam;
-    tuggboPID.SetOutputLimits(44, 65); //since the motor only starts working at 50 PWM, we need to set the PWM min to 50 (the max remains at the PWM max of 255. Also at 255, the motor seems too fast, so I'm capping it at 200
+    tuggboPID.SetOutputLimits(43, 65); //since the motor only starts working at 50 PWM, we need to set the PWM min to 50 (the max remains at the PWM max of 255. Also at 255, the motor seems too fast, so I'm capping it at 200
     tuggboPID.SetMode(AUTOMATIC);
 
     //Starts the motor in forward direction at the motor starting speed
