@@ -10,7 +10,7 @@
   
   //*MOSFET MOTOR CONTROLLER*//
     const int MOSFET = 6; //MOSFET PWM output goes through pin 6 -- this needs to be a PWN pin. On the Nano Every that's D3, D5, D6, D9, D10
-    int pwmSpeed = 45; // This sets the speed of the spooler -- we want this to be faster than the pulling speed of the tuggbo, but the spool diameter is much larger than Tuggbo's wheel, so let's try 30 for now
+    int pwmSpeed = 65; // This sets the speed of the spooler -- we want this to be faster than the pulling speed of the tuggbo, but the spool diameter is much larger than Tuggbo's wheel, so let's try 30 for now
     
 void setup() {
   
@@ -35,6 +35,6 @@ delay(50);
   //Starts the motor in forward direction at the motor starting speed
   analogWrite(MOSFET, 0);
  
-delay(50);
+delay(75);
 
 }
