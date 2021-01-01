@@ -21,7 +21,10 @@
     int k = 0;
     int MITreadAve;
     int MITreadAveDiff;
-    const int FilamentDiam = 120; //Sets the filament diameter goal we want. Units are mm/100. Technically, we want 1.75m, but there's a slight groove in our Mitutoyo's pulley, which leads to a 0.3mm offset.
+    const int MIToffset = 30; //(THIS VARIABLE IS NOT CURRENTLY USED, BUT WILL BE IMPLEMENTED SOON) -- Because of a slight groove in the Mitutoyo's filament guide bearing, there is a 0.3 mm offset
+                              //The offset is currently subtracted manually and directly from setpoint and measured values, but will be implemented automatically at a later stage to give more intuitive outputs
+    const int FilamentDiam = 105; //Sets the filament diameter goal we want. Units are mm/100. At the moment we're aiming for 1.35 mm filament
+                                  //this seems to be the best diameter to achieve sufficient cooling with the current setup.
     byte mydata[14];
     String value_str;
     long value_int;
@@ -29,23 +32,24 @@
   
   //*MOSFET MOTOR CONTROLLER*//
     const int MOSFET = 6; //MOSFET PID (PWM) output goes through pin 6 -- this needs to be a PWN pin. On the Nano Every that's D3, D5, D6, D9, D10
-    int pwmStart = 43; //variable determining motor speed, starts at 43
+    int pwmStart = 35; //variable determining motor speed, starts at 43
 
   //*PID FILAMENT DIAMETER CONTROL*//
     //define PID Variables
     double Setpoint, Input, Output;
     float Kp = 0.3; //The proportional gain (Kp) determines the ratio of output response to the error signal. In general, increasing the proportional gain will increase the speed of the control system response
-                  //I'm setting this to 0.25, since preliminary tests showed that Tuggbo was reacting too quickly, even at Kp = 2
+                  //I'm setting this to 0.3, since preliminary tests showed that Tuggbo was reacting too quickly, even at Kp = 2
                   //0.2 was too slow
                   
     float Ki = 0.05; //The integral component sums the error term over time. The result is that even a small error term will cause the integral component to increase slowly.
                     //The integral response will continually increase over time unless the error is zero, so the effect is to drive the Steady-State error to zero.
                     //Previously 0.1
-
-    float Kd = 0.01; //The derivative component causes the output to decrease if the process variable is increasing rapidly (in our case, this is reversed).
+                    
+    float Kd = 0.07; //The derivative component causes the output to decrease if the process variable is increasing rapidly (in our case, this is reversed).
                   //The derivative response is proportional to the rate of chMange of the process variable.
                   //Increasing the derivative time (Td) parameter will cause the control system to react more strongly to changes in the error term and will increase the speed of the overall control system response.
                   //Most practical control systems use very small derivative time (Td), because the Derivative Response is highly sensitive to noise in the process variable signal.
+                  //Previously 0.05 -- may need to push this up to further counter overshoot in filament thickness
     
     //Specify the links and initial tuning parameters
     PID tuggboPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, P_ON_E, REVERSE); //PID coefficients were taken from http://electronoobs.com/eng_arduino_tut24_2.php as a starting poinoinoi
@@ -56,7 +60,7 @@
   //*MOVING AVERAGE VARIABLES*//
     //Sets up the movingAverage function with 50 readings (1 per millisecond) per moving average window with a starting value of 0
     //This function will constantly calcualte a moving average for smoothed Mitutoyo readings -- the moving average window also serves to moderate Tuggbo's control response to make it less jerky 
-    MovingAverage<unsigned> MITread(10, 0);
+    MovingAverage<unsigned> MITread(5, 0);
 
     // Generates the first input for the MovingAverage function
     unsigned MITread_x = 0;
@@ -79,7 +83,7 @@ void setup() {
     //Define Input and Setpoint and turn the PID on
     Input = MITreadAve;
     Setpoint = FilamentDiam;
-    tuggboPID.SetOutputLimits(43, 65); //since the motor only starts working at 50 PWM, we need to set the PWM min to 50 (the max remains at the PWM max of 255. Also at 255, the motor seems too fast, so I'm capping it at 200
+    tuggboPID.SetOutputLimits(35, 70); //since the motor only starts working at 43 PWM, we need to set the PWM min to 43. 70 is plenty fast, so I'm capping the max here.
     tuggboPID.SetMode(AUTOMATIC);
 
     //Starts the motor in forward direction at the motor starting speed
@@ -121,8 +125,8 @@ void loop() {
     if(MITread_x > 170){ // outliers sometimes pop up and cause shit... this eliminates false highs
       MITread_x = 169;
       
-    }if(MITread_x < 70){ // outliers sometimes pop up and cause shit... this eliminates false highs
-      MITread_x = 70;
+    }if(MITread_x < 60){ // outliers sometimes pop up and cause shit... this eliminates false lows
+      MITread_x = 60;
     }
     
     MITread.push(MITread_x);
@@ -141,9 +145,10 @@ void loop() {
     //*PID FILAMENT DIAMETER CONTROL*//
     //if there is no filament is present, we want the motor to continue turning at its minimum speed (0.2 mm is a safe margin for no filament being present)
     //if filament has been fed in (i.e., the Mitutoyo reads higher than 0.2) start PID motor control  
-    if(MITreadAve <70) { 
-       Serial.print("   NO FILAMENT: "); //for debugging purposes
+    if(MITreadAve <60) { 
+       Serial.print("   THIN/NO FILAMENT: "); //for debugging purposes
        Serial.println(pwmStart); //for debugging purpose
+       
        analogWrite(MOSFET, pwmStart); 
     } else {
       Input = MITreadAve;
@@ -151,17 +156,17 @@ void loop() {
       tuggboPID.Compute();
       analogWrite(MOSFET, Output);
       
-      if(MITreadAve > 105 && MITreadAve < 135) { 
+      if(MITreadAve > 89 && MITreadAve < 121) { 
         Serial.print("   TARGET: "); //for debugging purposes
         Serial.println(Output); //for debugging purposes
         }
         
-      if(MITreadAve > 135) {       
+      if(MITreadAve > 120) {       
         Serial.print("   THICK: "); //for debugging purposes
         Serial.println(Output); //for debugging purposes
         }
 
-      if(MITreadAve < 105) {
+      if(MITreadAve < 90) {
         Serial.print("   THIN: "); //for debugging purposes
         Serial.println(Output); //for debugging purposes
       }
