@@ -83,7 +83,7 @@ void setup() {
     pinMode(req, OUTPUT); //Set the req (5) pin as an output so that data requests can be triggered by setting the pin LOW
     pinMode(clk, INPUT_PULLUP); //To obtain data we will read from the clk and dat pins, so they need to be set to INPUT with internal PULLUP resistors to stop noisy readings
     pinMode(dat, INPUT_PULLUP); //To obtain data we will read from the clk and dat pins, so they need to be set to INPUT with internal PULLUP resistors to stop noisy readings
-    digitalWrite(req, LOW); // set initial state of req (5) pin to HIGH so that data can be requested from Mitutoyo by setting the pin LOW
+    digitalWrite(req, HIGH); // set initial state of req (5) pin to HIGH so that data can be requested from Mitutoyo by setting the pin LOW
 
   //*MOSFET MOTOR CONTROLLER*//
     //MOSFET pin is set to output so that we can send PWM signals to control the motor
@@ -105,7 +105,7 @@ void loop() {
  //*MITUTOYO*//
    //get readings from the SPC cable (see https://www.instructables.com/id/Interfacing-a-Digital-Micrometer-to-a-Microcontrol/ for details)
   
-    digitalWrite(req, HIGH); // request data from Mitutoyo
+    digitalWrite(req, LOW); // request data from Mitutoyo
 
     for( i = 0; i < 13; i++ ) {
       k = 0;
@@ -127,7 +127,7 @@ void loop() {
     buf[6]=0;
     MITread_x = atol(buf); //assembled measurement, no decimal place added
    
-    digitalWrite(req, LOW); //reset req (5) pin to HIGH to stop data request
+    digitalWrite(req, HIGH); //reset req (5) pin to HIGH to stop data request
     
   //*MOVING AVERAGE CALCULATION*//
     // Pushes the MITUTOYO reading as an input to the moving average object
@@ -145,7 +145,7 @@ void loop() {
          delay(10);
          //get readings from the SPC cable (see https://www.instructables.com/id/Interfacing-a-Digital-Micrometer-to-a-Microcontrol/ for details)
   
-            digitalWrite(req, HIGH); // request data from Mitutoyo
+            digitalWrite(req, LOW); // request data from Mitutoyo
         
             for( i = 0; i < 13; i++ ) {
               k = 0;
@@ -167,7 +167,7 @@ void loop() {
             buf[6]=0;
             MITread_x = atol(buf); //assembled measurement, no decimal place added
            
-            digitalWrite(req, LOW); //reset req (5) pin to HIGH to stop data request
+            digitalWrite(req, HIGH); //reset req (5) pin to HIGH to stop data request
 
             MITreadPush = (MITread_x + MIToffset)/100;
             MITread.push(MITreadPush);
