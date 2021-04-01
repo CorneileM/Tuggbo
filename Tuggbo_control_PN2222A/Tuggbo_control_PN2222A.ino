@@ -25,7 +25,10 @@
     float MITreadPush;
     float MITreadAve;
     float MITreadAveDiff;
-    const float MIToffset = 30; //Because of a slight groove in the Mitutoyo's filament guide bearing, there is a 0.3 mm offset -- we multiply the offset by 100 to correspond with the raw data from the Mitutoyo
+    //const float MIToffset = 30; //Tuggbo#1
+    //const float MIToffset = 20; //Tuggbo#2
+    const float MIToffset = 15; //Tuggbo#3
+                              //Because of a slight groove in the Mitutoyo's filament guide bearing, there is a 0.3 mm offset -- we multiply the offset by 100 to correspond with the raw data from the Mitutoyo
                               //The offset is currently subtracted manually and directly from setpoint and measured values, but will be implemented automatically at a later stage to give more intuitive outputs
     const float FilamentDiam = 1.65; //Sets the filament diameter goal we want. Units are mm/100. At the moment we're aiming for 1.35 mm filament
                                   //this seems to be the best diameter to achieve sufficient cooling with the current setup.
