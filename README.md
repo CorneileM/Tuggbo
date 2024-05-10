@@ -10,7 +10,7 @@ which is read from a Mitutoyo digital plunge-dial indicator, to obtain a stable 
 The repository also includes an Arduino sketch and circuit diagram for a PID controlled heater that is placed inside the FILABOT EX2 hopper, to pre-heat and soften plastic pellets 
 before entering the extrusion screw. This functions to prevent the the extrusion screw from being blocked by large pieces of hard plastic. This is specific to my application of producing filament from recycled plastic bottles. Preheating allowed for smoother plastic flow from the hopper into the extruder screw.
 
-
+![Photo of Tuggbo](https://github.com/CorneileM/Tuggbo/blob/master/Images_and_video/Photo_of_Tuggbo.png)
 
 ### Useful resources and background information
 #### PID process control
