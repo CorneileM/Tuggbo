@@ -21,6 +21,8 @@ before entering the extrusion screw. This functions to prevent the the extrusion
 
 ### Useful resources and background information
 #### PID process control
+[Interfacing a digital micrometer and a microcontroller]( https://www.instructables.com/id/Interfacing-a-Digital-Micrometer-to-a-Microcontrol/ )
+
 [Arduino PID library](https://playground.arduino.cc/Code/PIDLibrary/)
 
 [PID explained for process engineers](https://www.aiche.org/resources/publications/cep/2016/february/pid-explained-process-engineers-part-2-tuning-coefficients)
