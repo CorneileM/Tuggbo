@@ -1,3 +1,2 @@
 # Ignore files in the Tuggbo_3D_printed_parts directory
-Tuggbo_3D_printed_parts/*
-Images_and_video/*
+Tuggbo_3D_printed_parts/gcode/*
