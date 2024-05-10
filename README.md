@@ -11,9 +11,11 @@ The repository also includes an Arduino sketch and circuit diagram for a PID con
 before entering the extrusion screw. This functions to prevent the the extrusion screw from being blocked by large pieces of hard plastic. This is specific to my application of producing filament from recycled plastic bottles. Preheating allowed for smoother plastic flow from the hopper into the extruder screw.
 
 <br>
-#### Tuggbo in action
-[Tuggbo in action](
-<img src="https://github.com/CorneileM/Tuggbo/blob/master/Images_and_video/Photo_of_Tuggbo.png" width="300"/>)
+
+# Tuggbo
+
+[Photo of Tuggbo]<img src="https://github.com/CorneileM/Tuggbo/blob/master/Images_and_video/Photo_of_Tuggbo.png" width="300"/>
+
 <br>
 
 ### Useful resources and background information
