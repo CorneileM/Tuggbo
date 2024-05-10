@@ -12,9 +12,9 @@ before entering the extrusion screw. This functions to prevent the the extrusion
 
 <br>
 
-# Tuggbo
+#### Tuggbo
 
-[Photo of Tuggbo]<img src="https://github.com/CorneileM/Tuggbo/blob/master/Images_and_video/Photo_of_Tuggbo.png" width="300"/>
+<img src="https://github.com/CorneileM/Tuggbo/blob/master/Images_and_video/Photo_of_Tuggbo.png" width="300"/>
 
 <br>
 
